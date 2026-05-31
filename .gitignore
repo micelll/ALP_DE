@@ -1,0 +1,12 @@
+container/logs/
+
+credentials/
+
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+dbt/online_retail/target/
+dbt/online_retail/logs/
+dbt/online_retail/dbt_packages/

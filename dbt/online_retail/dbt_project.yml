@@ -1,0 +1,18 @@
+name: 'online_retail'
+version: '1.0.0'
+config-version: 2
+
+profile: 'online_retail'
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+
+models:
+  online_retail:
+    staging:
+      +materialized: view
+      +schema: silver
+    marts:
+      +materialized: table
+      +schema: gold

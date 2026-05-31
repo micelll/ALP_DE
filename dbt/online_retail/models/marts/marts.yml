@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: fact_sales
+    description: "Sales fact table - one row per invoice line item"
+    columns:
+      - name: fact_key
+        tests:
+          - not_null
+          - unique
+  
+  - name: dim_customers
+    columns:
+      - name: customer_key
+        tests:
+          - not_null
+          - unique
+  
+  - name: dim_products
+    columns:
+      - name: product_key
+        tests:
+          - not_null
+          - unique
+  
+  - name: dim_date
+    columns:
+      - name: date_key
+        tests:
+          - not_null
+          - unique

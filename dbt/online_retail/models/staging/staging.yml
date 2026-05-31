@@ -1,0 +1,16 @@
+version: 2
+
+models:
+  - name: stg_online_retail
+    description: "Cleaned and deduplicated retail transactions"
+    columns:
+      - name: invoice_id
+        description: "Invoice number"
+        tests:
+          - not_null
+      - name: stock_code
+        tests:
+          - not_null
+      - name: unit_price
+        tests:
+          - not_null
