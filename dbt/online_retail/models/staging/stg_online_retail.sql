@@ -20,18 +20,36 @@ cleaned as (
 
     from source
     where
-        quantity > 0               
-        and price > 0              
+        -- Catatan Bisnis: Jangan filter 'quantity > 0' di sini jika ingin mempertahankan data retur (C%).
+        -- Di dataset Online Retail II, barang yang diretur ditandai dengan invoice diawali huruf 'C' DAN quantity bernilai negatif.
+        (quantity > 0 or invoice like 'C%')
+        and price > 0               
         and stockcode not in ('POST', 'D', 'M', 'BANK CHARGES', 'PADS', 'DOT')  -- hilangkan non-product
 ),
 
 deduped as (
-    select *
+    select 
+        *,
+        -- Kita buat row_number di dalam CTE ini menggantikan QUALIFY
+        row_number() over (
+            partition by invoice_id, stock_code, quantity, unit_price
+            order by invoice_date
+        ) as rn
     from cleaned
-    qualify row_number() over (
-        partition by invoice_id, stock_code, quantity, unit_price
-        order by invoice_date
-    ) = 1
 )
 
-select * from deduped
+-- Di seleksi akhir, baru kita saring yang bernilai 1 dan drop kolom rn-nya
+select 
+    invoice_id,
+    stock_code,
+    description,
+    quantity,
+    invoice_date,
+    unit_price,
+    customer_id,
+    country,
+    line_total,
+    invoice_date_day,
+    is_return
+from deduped
+where rn = 1
