@@ -3,11 +3,17 @@ with transactions as (
 ),
 
 dim_customers as (
-    select customer_key, customer_id from {{ ref('dim_customers') }}
+    -- Memastikan hanya ada 1 customer_key per customer_id
+    select customer_id, max(customer_key) as customer_key 
+    from {{ ref('dim_customers') }}
+    group by customer_id
 ),
 
 dim_products as (
-    select product_key, stock_code from {{ ref('dim_products') }}
+    -- Memastikan hanya ada 1 product_key per stock_code (Mencegah Fan-out)
+    select stock_code, max(product_key) as product_key 
+    from {{ ref('dim_products') }}
+    group by stock_code
 ),
 
 dim_date as (
@@ -15,7 +21,6 @@ dim_date as (
 )
 
 select
-    -- Kunci di-generate setelah datanya dipastikan unik per invoice & item
     md5(t.invoice_id || t.stock_code || t.invoice_date::text) as fact_key,
     
     c.customer_key,
@@ -27,9 +32,8 @@ select
     t.is_return,
     t.invoice_date,
     
-    -- Lakukan agregasi untuk mengeliminasi duplikat item di invoice yang sama
     sum(t.quantity) as quantity,
-    max(t.unit_price) as unit_price, -- ambil harga tertinggi atau rata-rata jika variatif
+    max(t.unit_price) as unit_price,
     sum(t.line_total) as line_total
 
 from transactions t
