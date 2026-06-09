@@ -365,6 +365,47 @@ Through this interface, users can verify direct access to the live warehouse cat
 3. **`dim_products`**: The validated stock description master inventory index with unified description and pricing metrics.
 4. **`dim_date`**: The deconstructed fiscal calendar table mapping temporal parameters like month names, quarters, and weekends.
 
+### Query Results Sample
+
+After successful execution, you can verify data in Gold layer:
+
+**fact_sales Table (First 5 Rows Ordered by Key)**:
+```sql
+SELECT fact_key, customer_key, product_key, date_key, quantity, unit_price
+FROM silver_gold.fact_sales
+ORDER BY fact_key ASC
+LIMIT 5;
+```
+Expected Result:  
+![Query Result 1](assets/query_result.png)
+
+**dim_customers table**:
+```sql
+SELECT COUNT(*) FROM silver_gold.dim_customers;
+```
+Expected Result:  
+```
+5,895
+```
+
+**dim_products table**:
+```sql
+SELECT COUNT(*) FROM silver_gold.dim_products;
+```
+Expected Result:  
+```
+4,926
+```
+
+**dim_date table**:
+```sql
+SELECT COUNT(*) FROM silver_gold.dim_date;
+```
+Expected Result:  
+```
+761
+```
+
 
 ---
 
