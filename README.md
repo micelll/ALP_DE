@@ -14,7 +14,7 @@
 - [Planned Data Transformation Layers](#planned-data-transformation-layers)
 - [Planned Business Insights](#planned-business-insights)
 - [How to Run](#how-to-run)
-- [Expected Result](#expected-result)
+- [Expected Output](#expected-output)
 - [Metabase Dashboard](#metabase-dashboard)
 - [Findings & Conclusion](#findings--conclusion)
 - [Known Limitations](#known-limitations)
