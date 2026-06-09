@@ -431,23 +431,41 @@ This monitoring interface combines macro financial performance tracking with dee
 
 ## Findings & Conclusion
 
-The data pipeline successfully transformed raw transaction data into structured insights stored within the data warehouse. Key findings include:
+The completed pipeline successfully transformed the raw **Online Retail II** transactional dataset into a structured analytics warehouse using a Medallion Architecture approach. The source dataset contains more than **1 million transaction records**, which were ingested into the Bronze layer, cleaned and standardized in the Silver layer, and modeled into Gold layer tables for business reporting.
 
+Key findings from the final warehouse and dashboard are summarized below:
 
+- **The pipeline successfully processed large-scale retail data locally.** The project was able to ingest and transform **1,067,371 raw records** into analytical tables using Docker, Airflow, PostgreSQL, dbt, and Metabase.
+- **Data quality improved after transformation.** Duplicate rows, invalid product records, missing customer identities, canceled transactions, and inconsistent text values were handled before the data was used for reporting.
+- **The Gold layer supports efficient business analysis.** The final dimensional model consists of `fact_sales`, `dim_customers`, `dim_products`, and `dim_date`, which makes revenue, customer, product, and time-based analysis easier to perform in Metabase.
+- **Revenue is highly concentrated in the United Kingdom.** Based on the dashboard, the United Kingdom contributes the largest portion of total revenue, while countries such as EIRE, Netherlands, Germany, and France also appear as important international markets.
+- **Monthly revenue shows clear seasonality.** Sales activity increases strongly around November in both 2010 and 2011, indicating a possible year-end purchasing pattern.
+- **Several products contribute significantly to total revenue.** Product-level analysis shows that a small group of items can generate a large share of sales, making product performance monitoring important for retail decision-making.
+- **Customer behavior can be analyzed through spending and transaction frequency.** The customer dashboard helps identify high-value customers and customers with repeated purchasing behavior.
+
+In conclusion, this project demonstrates that a complete local data engineering pipeline can be built using **Docker, Airflow, dbt, PostgreSQL, and Metabase**. The pipeline not only moves data from raw ingestion to analytical reporting, but also improves data quality, validates the final tables, creates a structured Star Schema, and produces business-ready insights. Therefore, the final warehouse can support retail performance monitoring, customer analysis, product sales evaluation, and country-level revenue analysis.
 
 ---
 
 ## Known Limitations
 
-- **Batch Ingestion Constraints**: The pipeline operates on fixed batch cycles using local file storage rather than continuously streaming live API inputs.
+Although the pipeline was successfully implemented, several limitations still exist:
 
-- **Host Resource Overhead**: Processing over 1 million records through an uncompressed local Excel parsing driver can cause short memory spikes on the host machine before the data lands in the Bronze database layer.
+- **Local batch processing only**: The pipeline runs using a local Excel file and batch execution. It does not yet support real-time streaming, API ingestion, or automated scheduled updates from a live production source.
 
-- **Single-Node Warehouse Environment**: The PostgreSQL OLAP cluster is configured as a single-node setup for development and testing, rather than a multi-node distributed database.
+- **High dependency on local machine resources**: Because the dataset contains more than 1 million rows and is loaded from an Excel file, the ingestion process may consume significant memory and processing power, especially on devices with limited Docker resources.
 
-- **Local Visualization Syncing (Metabase Sandbox Constraints)**: Because Metabase dashboards and connection states are stored in local Docker database volumes rather than Git files, they do not automatically sync between contributors' branches. Each team member must manually recreate and configure their dashboard panels locally, creating collaborative hurdles for interface development.
+- **Single-node PostgreSQL warehouse**: The warehouse runs on a single PostgreSQL container, which is suitable for development and academic demonstration but not designed for large-scale distributed production workloads.
 
-- **Strict Package and Tool Version Coupling**: The orchestration and SQL translation engines are exceptionally sensitive to technical version alignment. Even minor discrepancies between python packages, PostgreSQL driver interfaces, SQLAlchemy, and Apache Airflow (strictly locked to version 2.10.2 in airflow.Dockerfile) will cause execution and deployment failures.
+- **Metabase dashboard is not fully version-controlled**: Dashboard layout, saved questions, and visualization settings are stored inside local Docker volumes. As a result, each contributor may need to recreate or reconfigure the dashboard manually when running the project on a different machine.
+
+- **Manual first-time setup is still required**: Users still need to initialize Airflow, trigger the DAG, and configure the Metabase database connection manually before the dashboard can be used.
+
+- **Environment differences may cause setup issues**: Differences between macOS, Windows, and Linux environments may create problems such as Docker permission errors, CRLF/LF line-ending issues, port conflicts, or package version mismatches.
+
+- **Business analysis is limited to the available historical dataset**: The dataset only covers transactions from 2009 to 2011, so the insights represent historical retail behavior and may not reflect current e-commerce market conditions.
+
+- **Limited advanced analytics**: The dashboard focuses on descriptive analytics such as revenue trends, product performance, country contribution, and customer behavior. Predictive models, customer lifetime value forecasting, churn prediction, and recommendation systems are not included in the current scope.
 
 ---
 ## Bonus: Incremental Loading Strategy
