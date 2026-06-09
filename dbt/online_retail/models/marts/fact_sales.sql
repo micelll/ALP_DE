@@ -1,5 +1,19 @@
+-- with transactions as (
+--     select * from {{ ref('stg_online_retail') }}
+-- ),
+
+{{ config(
+    materialized='incremental',
+    unique_key='fact_key',
+    on_schema_change='fail'
+) }}
+
 with transactions as (
     select * from {{ ref('stg_online_retail') }}
+    {%- if is_incremental() -%}
+        -- Hanya ambil data baru yang tanggalnya lebih besar dari data maksimal yang sudah masuk data warehouse
+        where invoice_date > (select max(invoice_date) from {{ this }})
+    {%- endif -%}
 ),
 
 dim_customers as (
