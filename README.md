@@ -437,8 +437,9 @@ To optimize pipeline performance and achieve production-grade data warehouse sca
 
 | Name | NIM |
 |------|-----|
-| Ruby Arthalia Golden | 0706022310035 |
 | Amanda Renata Go | 0706022310010 |
 | Catherine Eline Santoso | 0706022310009 |
 | Deborah Michelle Kwandinata | 0706022310014 |
 | Feylin Christelia | 0706022310012 |
+| Ruby Arthalia Golden | 0706022310035 |
+
