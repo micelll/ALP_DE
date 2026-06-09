@@ -10,6 +10,7 @@
 - [Project Objectives](#project-objectives)
 - [Technology Stack](#technology-stack)
 - [Pipeline Architecture](#pipeline-architecture)
+- [Data Model Diagram](#data-model-diagram)
 - [Planned Data Transformation Layers](#planned-data-transformation-layers)
 - [Planned Business Insights](#planned-business-insights)
 - [How to Run](#how-to-run)
@@ -30,6 +31,15 @@ Source: University of California, Irvine (UCI)
 Dataset file: `online_retail_II.xlsx` (inside the `ingestion/` folder)
 
 Dataset Link: https://archive.ics.uci.edu/dataset/502/online+retail+ii
+
+### Dataset Deep Dive & Scale
+An initial profile analysis of the multi-year transactional logs was conducted to map the operational scale of the retail business:
+* **File Size & Format**: ~45.00 MB (Excel `.xlsx` worksheet).
+* **Total Transactions**: 1,067,371 raw recorded rows across a 24-month horizon.
+* **Temporal Range**: December 2009 to December 2011.
+* **Unique Customers**: **5,895** distinct customer identities discovered across active purchases.
+* **Unique Products**: **4,683** distinct SKUs (Stock Keeping Units) cataloged in the inventory.
+* **Geographical Scope**: **41** countries covered globally, led heavily by the United Kingdom.
 
 ### Dataset Validation Result
 
@@ -149,6 +159,19 @@ The pipeline follows the **Medallion Architecture** pattern with three distinct 
 
 ---
 
+## Data Model Diagram
+
+### Star Schema (Gold Layer)
+
+![Star Schema Data Model Diagram](assets/...)
+
+### Schema Relationship Details - sesuaikan lagi yah rubs
+* **`dim_customers` $\rightarrow$ `fact_sales`** (Cardinality: `1 to Many`): Berelasi via `customer_key`. Satu pelanggan dapat melakukan banyak transaksi pembelian.
+* **`dim_products` $\rightarrow$ `fact_sales`** (Cardinality: `1 to Many`): Berelasi via `product_key`. Satu produk dapat terjual berkali-kali di berbagai nomor invoice berbeda.
+* **`dim_date` $\rightarrow$ `fact_sales`** (Cardinality: `1 to Many`): Berelasi via `date_key`. Satu tanggal kalender mencakup banyak riwayat transaksi retail.
+
+---
+
 ## Planned Data Transformation Layers
 
 1. **Bronze Layer (Raw Archive)**: Captures raw tabular transactions into the target `raw_online_retail table`. Schema fields reflect the data source exactly, maintaining formatting errors or invalid records for audit tracing.
@@ -257,8 +280,48 @@ ingest_to_bronze (Python Ingestion) ──▶ dbt_run (Silver/Gold Build) ──
 
 ---
 
-## Metabase Dashboard
+## 📊 Expected Output
 
+### Apache Airflow DAG Execution
+The batch infrastructure operates as a fully automated, linear workflow orchestrated by Apache Airflow. The graph view below verifies a successful production run where every logical dependency concludes with a valid green status.
+
+![Airflow DAG Success Graph](assets/airflow_success.png)
+
+* **`ingest_to_bronze`**: Successfully streams and copies the raw historical Excel logs into the PostgreSQL database using optimized cursor batches.
+* **`dbt_run`**: Automatically compiles the cleaning logic into staging views (Silver) and sequentially materializes the physical dimension and fact tables (Gold).
+* **`dbt_test`**: Automatically runs schema validation checkpoints (`unique` and `not_null`) to enforce production-grade data integrity.
+
+### Metabase Warehouse Connection & Gold Layer Datasets
+The analytical presentation engine connects securely to the centralized PostgreSQL data warehouse over the internal Docker network. The screenshot below confirms that the analytical database instance is open, online, and successfully exposes the compiled Gold Layer tables to the analyst workspace.
+
+![Metabase Warehouse Connection Status](assets/metabase_success.png)
+
+Through this interface, users can verify direct access to the live warehouse catalogs, showing that the operational structures are fully loaded and prepared for targeted business query building:
+1. **`fact_sales`**: The core metric ledger populated with valid keys, quantities, unit prices, and aggregated transactional totals.
+2. **`dim_customers`**: The cleaned identity store containing traceable demographic data and aggregated transaction counts.
+3. **`dim_products`**: The validated stock description master inventory index with unified description and pricing metrics.
+4. **`dim_date`**: The deconstructed fiscal calendar table mapping temporal parameters like month names, quarters, and weekends.
+
+
+---
+
+## Metabase Dashboard
+The Gold dimensional serving layer connects directly to Metabase to translate transaction records into clear business metrics. The visualization tier is split into two primary analytical layers to evaluate operational trends and customer behavior.
+
+### Online Retail Analytics Dashboard
+This monitoring interface combines macro financial performance tracking with deep-dive micro-analysis of consumer interaction patterns across the full 24-month operational horizon.
+![Dashboard 1](assets/dashboard1.png)
+![Dashboard 2](assets/dashboard2.png)
+
+* **Key Performance Indicators (KPI Cards)**: Provides an immediate snapshot of platform achievements across four foundational metric fields:
+  * **Total Revenue**: Cumulative platform sales reaching a milestone of **£18.7M**.
+  * **Total Orders**: High-throughput transactional volume counting **47,107** unique orders.
+  * **Total Customers**: Master identity profiles tracking **5,895** unique buyers.
+  * **Average Order Value**: Average monetary basket volume standing at **£397.5** per checkout.
+* **Monthly Revenue Trend**: A synchronized line chart tracing historical sales fluctuations. It highlights stable operational baselines with prominent seasonal consumer demand spikes peaking in November of both 2010 and 2011 (exceeding £1.4M in monthly sales).
+* **Top 10 Products by Revenue**: A horizontal bar chart indexing stock codes by performance yield. It highlights the primary drivers of retail liquidity, led heavily by products like `"REGENCY CAKESTAND 3 TIER"` and `"CREAM HANGING HEART T-LIGHT HOLDER"`.
+* **Revenue by Country**: A geographic distribution chart showing transactional concentration. It proves the **United Kingdom** commands the dominant market footprint for platform revenue, while also pinpointing core European expansion clusters in **EIRE (Ireland)**, the **Netherlands**, and **Germany**.
+* **Customer Purchase Frequency vs Total Spending**: A multi-dimensional scatter plot correlating client engagement layers. This workspace maps order densities (`total_invoices`) against long-term financial yield (`total_spending`), allowing analysts to isolate distinct customer segments and enterprise power-users.
 
 ---
 
