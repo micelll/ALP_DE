@@ -169,13 +169,16 @@ The pipeline follows the **Medallion Architecture** pattern with three distinct 
 ### Schema Relationship Details 
 The Gold layer follows a Star Schema design with fact_sales as the central fact table and three supporting dimensions: dim_customers, dim_products, and dim_date. Each sales transaction is associated with a customer, a product, and a date through surrogate keys.
 * **`dim_customers` $\rightarrow$ `fact_sales`** (Cardinality: `1 to Many`)
-This relationship connects each sales transaction to customer information such as country, total invoice count, first purchase date, and last purchase date. Multiple transactions can belong to the same customer, while each transaction references a single customer record. This dimension supports customer-centric analysis including purchase frequency, customer activity, and sales distribution by country.
+   Join Key: `customer_key`
+   This relationship connects each sales transaction to customer information such as country, total invoice count, first purchase date, and last purchase date. Multiple transactions can belong to the same customer, while each transaction references a single customer record. This dimension supports customer-centric analysis including purchase frequency, customer activity, and sales distribution by country.
 
 * **`dim_products` $\rightarrow$ `fact_sales`** (Cardinality: `1 to Many`)
-This relationship links sales transactions to product details such as stock code, product description, average unit price, and special product indicators. A single product may appear across many transactions over time, while each transaction references one product. This dimension enables product performance analysis, revenue contribution tracking, and identification of top-selling products.
+   Join Key: `product_key`
+   This relationship links sales transactions to product details such as stock code, product description, average unit price, and special product indicators. A single product may appear across many transactions over time, while each transaction references one product. This dimension enables product performance analysis, revenue contribution tracking, and identification of top-selling products.
 
 * **`dim_date` $\rightarrow$ `fact_sales`** (Cardinality: `1 to Many`)
-This relationship associates each transaction with a calendar date. The date dimension contains attributes such as year, quarter, month, week number, day name, and weekend indicators. Multiple transactions can occur on the same date, while each transaction references one date record. This dimension supports trend analysis, seasonality detection, and time-based reporting.
+   Join Key: `date_key`
+   This relationship associates each transaction with a calendar date. The date dimension contains attributes such as year, quarter, month, week number, day name, and weekend indicators. Multiple transactions can occur on the same date, while each transaction references one date record. This dimension supports trend analysis, seasonality detection, and time-based reporting.
 
 The dimensional model allows sales data to be analyzed efficiently from customer, product, and time perspectives while maintaining a simple and performant Star Schema structure.
 
