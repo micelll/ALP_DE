@@ -18,6 +18,7 @@
 - [Metabase Dashboard](#metabase-dashboard)
 - [Findings & Conclusion](#findings--conclusion)
 - [Known Limitations](#known-limitations)
+- [Bonus: Incremental Loading Strategy](#bonus-incremental-loading-strategy)
 - [Contributors](#contributors)
 
 ---
@@ -236,7 +237,7 @@ Follow these operational instructions sequentially to initialize and run the ent
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/micell1/ALP_DE.git
+git clone https://github.com/micelll/ALP_DE.git
 cd ALP_DE
 ```
 
