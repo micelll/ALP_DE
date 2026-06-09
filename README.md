@@ -295,6 +295,40 @@ ingest_to_bronze (Python Ingestion) ──▶ dbt_run (Silver/Gold Build) ──
 
 4. Browse and create dashboards from the Gold layer tables
 
+###  Troubleshooting
+
+During the deployment and transformation phases, you may encounter environmental infrastructure or connection errors. Below are the verified solutions for the most common pipeline bottlenecks:
+
+#### 1. Issue: "standard_init_linux.go:228: exec user process caused: no such file or directory" (or database container instantly crashing)
+* **Cause**: The shell initialization script `init-db.sh` was saved with Windows **CRLF** line endings instead of Linux **LF** line endings.
+* **Solution**: Open `init-db.sh` in VS Code, click on **CRLF** in the bottom-right status bar, change it to **LF**, save the file, and rebuild using `docker-compose up --build -d`.
+
+#### 2. Issue: "permission denied while trying to connect to the Docker daemon"
+* **Cause**: The current Linux user account lacks root privilege access to control the active Docker subsystem socket.
+* **Solution**: Add your active workspace profile directly into the local docker execution group:
+  ```bash
+  sudo usermod -aG docker $USER 
+  ```
+  *(Note: Log out and log back in for the user group permissions to take effect).*
+
+#### 3. Issue: "psycopg2.OperationalError: connection to server failed: Connection refused"
+* **Cause**: The Python ingestion operator triggered before the PostgreSQL database container fully finished initializing its internal clusters.
+* **Solution**: Check the live logs to confirm the database status, then clear and restart the workflow in the Airflow UI:
+   ```bash
+  docker logs postgres-warehouse
+  ```
+
+#### 4. Issue: "dbt: command not found" inside the Airflow Worker execution spaces
+* **Cause**: The virtual environment layers or dbt dependency wheels failed to install during the image build phase.
+* **Solution**: Verify that your airflow.Dockerfile explicitly includes the pip install dbt-postgresql instruction, and force a clean rebuild of the orchestration layers:
+   ```bash
+  docker-compose build --no-cache airflow-webserver airflow-scheduler
+  ```
+
+#### 5. Issue: Metabase displays "Connection refused" when attempting to save the PostgreSQL database setup panel
+* **Cause**: Using localhost or 127.0.0.1 inside the Host field. Containers cannot resolve the physical machine loopback interface directly.
+* **Solution**: Change the Host string to postgres-warehouse. This leverages the internal Docker bridge network DNS to map routing tables directly between the isolated containers.
+
 ---
 
 ## Expected Output
