@@ -132,8 +132,8 @@ The entire pipeline is orchestrated by **Apache Airflow** and containerized with
 
 **1. Clone the repository**
 ```bash
-git clone https://github.com/<your-username>/final-project-data-engineering.git
-cd final-project-data-engineering
+git clone https://github.com/micelll/ALP_DE.git
+cd ALP_DE
 ```
 
 **2. Verify the dataset & fix environment line endings**
@@ -142,6 +142,7 @@ The dataset (`online_retail_II.xlsx`) is already included inside the `ingestion/
 
 > ⚠️ **IMPORTANT FOR WINDOWS USERS (CRLF to LF):**
 > Before initializing Docker, you **must** ensure that the shell script `init-db.sh` uses **LF** line endings instead of Windows' default **CRLF**. If left as CRLF, Linux containers will fail to parse the script, throwing execution errors.
+You **must** also make sure `docker-compose.yml` is **not** LF but **CRLF**.
 >
 > **How to fix:**
 > - **In VS Code:** Open `init-db.sh`. Look at the bottom right corner of the status bar. Click on **CRLF** and change it to **LF**, then save the file.
