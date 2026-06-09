@@ -14,6 +14,7 @@
 - [Planned Data Transformation Layers](#planned-data-transformation-layers)
 - [Planned Business Insights](#planned-business-insights)
 - [How to Run](#how-to-run)
+- [Expected Result](#expected-result)
 - [Metabase Dashboard](#metabase-dashboard)
 - [Findings & Conclusion](#findings--conclusion)
 - [Known Limitations](#known-limitations)
@@ -174,16 +175,35 @@ The pipeline follows the **Medallion Architecture** pattern with three distinct 
 
 ## Planned Data Transformation Layers
 
-1. **Bronze Layer (Raw Archive)**: Captures raw tabular transactions into the target `raw_online_retail table`. Schema fields reflect the data source exactly, maintaining formatting errors or invalid records for audit tracing.
+The data warehouse implements a formal three-tier Medallion architecture orchestrated by Apache Airflow and fully transformed using dbt (Data Build Tool) Core compilation engines.
 
-2. **Silver Layer (Staging Platform)**: Compiled as modular SQL Views (`stg_online_retail`). Cleans data by casting data types (e.g., converting text to timestamps), remapping names, extracting cancellation indicators, and filtering out null identifier variables.
+### 1. Bronze Layer (Raw Archive Source)
+* **`raw_online_retail`**: Captures raw tabular transactions into PostgreSQL exactly as received from the uncompressed operational Excel workbook. No transformations are executed at this tier to preserve a full transactional audit trail.
+* **`sources.yml`**: Explicitly defines the connection properties, database name, target schema permissions, and baseline metadata structures pointing directly to the Bronze staging platform.
 
-3. **Gold Layer (Dimensional Marts)** : Persisted as physical database tables. Materializes an optimized Star Schema:
+### 2. Staging Layer (Silver - Business Cleansing)
+* **`stg_online_retail.sql`**: Materialized as a modular database view. This layer applies strict business filtering rules and explicit type casting using native PostgreSQL dialects:
+  * Trims and standardized nominal text fields (`description`, `country`).
+  * Explicitly casts numeric types to safe scale definitions (`numeric(10,2)`).
+  * Calculates computed fields (`line_total` via `quantity * price` and extracted `invoice_date_day`).
+  * Employs inline Common Table Expressions (CTEs) running windowed row-number evaluations (`row_number() over (partition by...)`) to completely eliminate operational duplicate records without relying on unsupported analytical syntaxes like `QUALIFY`.
+  * Preserves data integrity by keeping negative quantities that represent official consumer product cancellations (`invoice like 'C%'`) while filtering out administrative financial anomalies (e.g., `'POST'`, `'BANK CHARGES'`, `'DOT'`).
+* **`staging.yml`**: Hosts the initial data validation engine, enforcing strict quality checkpoints (`not_null` and `unique` verification rules) on operational business primary keys.
 
-   - `fact_sales`: Contains metrics such as `quantity`, `unit_price`, and  `line_total` along with foreign keys.
-   - `dim_customers`: Captures customer-specific aggregations like total invoices, country data, and lifecycle ranges.
-   - `dim_products`: Stores master records of stock details, text flags, and running pricing baselines.
-   - `dim_date`: Deconstructs dates into attributes such as year, quarter, month, week, and weekend flags.
+### 3. Mart Layer (Gold - Performance-Optimized Star Schema)
+Materialized as physical operational database tables to provide rapid query execution for visualization consumers.
+
+* **`fact_sales.sql`**: The centralized core transaction ledger. It uses deterministic composite key hashing algorithms (`md5(invoice_id || stock_code || invoice_date::text)`) to generate an immutable primary key (`fact_key`). This fact table groups quantities, unit prices, and revenue values while joining relational attributes across dimensions.
+* **`dim_customers.sql`**: The master consumer identity index. It runs explicit database grouping rules (`group by customer_id`) alongside aggregate windowing rules (`max(country)`) to solve operational structural fan-out challenges. This guarantees one row per unique business identification layer, recording client lifecycle boundaries (`first_purchase_date` and `last_purchase_date`).
+* **`dim_products.sql`**: The validated inventory master. It runs deduplication techniques (`distinct on (stock_code)`) and moving average calculations (`avg(unit_price) over (...)`) to build an uncorrupted registry of items.
+* **`dim_date.sql`**: The foundational fiscal time matrix. It runs programmatic dynamic date expansions (`generate_series`) covering the precise historical operational span (**December 1, 2009, to December 31, 2011**), deconstructing records into 761 explicit calendar nodes including quarter keys, month descriptions, and logical weekend flags.
+* **`marts.yml`**: Houses the final data auditing layer to verify structural consistency and referential integrity across the data mart platform.
+
+### Data Validation Summary
+All dbt core pipeline validation checkpoints pass cleanly during scheduled orchestrations:
+* **Unique Constraints Verified**: 4 primary keys validated (`fact_key`, `customer_key`, `product_key`, `date_key`).
+* **Not Null Validations Passed**: Strict non-null rules enforced on all relational business foreign keys and core currency dimensions.
+* **Data Quality Failures**: **0** systemic errors detected, ensuring a clean serving layer for downstream visualization layers.
 
 ---
 
@@ -192,11 +212,8 @@ The pipeline follows the **Medallion Architecture** pattern with three distinct 
 The analytical engine generates several high-value business insights:
 
 - Evaluating cumulative sales across fiscal operational months to identify seasonal spikes, annual compound expansions, and historical demand shifts.
-
 - Ranking stock codes against integrated revenue models to discover high-margin retail assets and inventory trends.
-
 - Aggregating transactional sales totals by country boundaries to isolate critical regional concentrations outside the domestic UK marketplace.
-
 - Evaluating customer segments by linking total interactions and lifecycle ranges to uncover baseline retention health.
 
 ---
@@ -280,7 +297,7 @@ ingest_to_bronze (Python Ingestion) ──▶ dbt_run (Silver/Gold Build) ──
 
 ---
 
-## 📊 Expected Output
+## Expected Output
 
 ### Apache Airflow DAG Execution
 The batch infrastructure operates as a fully automated, linear workflow orchestrated by Apache Airflow. The graph view below verifies a successful production run where every logical dependency concludes with a valid green status.
